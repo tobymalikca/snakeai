@@ -15,10 +15,11 @@ pygame.display.set_caption('Snake AI')
 black = pygame.Color(0, 0, 0)
 white = pygame.Color(255, 255, 255)
 red = pygame.Color(255, 0, 0)
+darkred = pygame.Color(150, 0, 0)
 green = pygame.Color(0, 255, 0)
 darkgreen = pygame.Color(0, 150, 0)
 blue = pygame.Color(0, 0, 255)
-orange = pygame.Color(255, 165 , 0)
+# orange = pygame.Color(255, 165 , 0)
 
 # FPS (frames per second) controller
 fps_controller = pygame.time.Clock()
@@ -34,8 +35,12 @@ change_to = direction
 score = 0
 framerate = 25
 deaths = 0
-epilepsy = False
+epilepsy = False # Epilepsy mode was only really used to debug the AI
 
+# This function is called when the snake is about to move into itself
+# If for example the snake was moving up, it runs a loop which scans to the left and right
+# Once its own body is detected, it turns the opposite way
+# This means the snake *usually* picks the side which has more free space
 def resolve(direction):
     global framerate, epilepsy
     if epilepsy:
@@ -53,7 +58,7 @@ def resolve(direction):
             # print("Right")
             return 'RIGHT'
         i += 1
-        if i >= 100:
+        if i > int(width/20):
             print("Timed out to left")
             return 'LEFT'
 
@@ -77,7 +82,7 @@ def resolve(direction):
             # print("Down")
             return 'DOWN'
         i += 1
-        if i >= 100:
+        if i > int(height/20):
             print("Timed out to up")
             return 'UP'
 
@@ -166,10 +171,11 @@ def game_over():
     deaths += 1
     i = 1
 
+    # Used to recolour the dead snakes
     dead_snake = snake_body.copy()
 
     # Respawn the snake somewhere randomly
-    # the previous snake body still persists and fades out instead of vanishing instantly
+    # The previous snake body still persists and fades out instead of vanishing instantly
     while True:
         new_pos = [random.randrange(1, (width//10)) * 10, random.randrange(1, (height//10)) * 10]
         if new_pos not in snake_body:
@@ -179,7 +185,7 @@ def game_over():
             print("Defaulted game over loop")
             break
 
-# Main menu function
+# Starting menu function
 def main_menu():
     global epilepsy
     menu = True
@@ -281,7 +287,7 @@ def main():
         if not food_spawn:
             i = 1
             # Jumpstart the snake if you want to skip the early game
-            if True and len(snake_body) < 100:
+            if False and len(snake_body) < 100:
                 match direction:
                     case 'UP':
                         food_pos = [snake_pos[0], snake_pos[1] - 10]
@@ -311,13 +317,13 @@ def main():
         # Background
         screen.fill(black)
 
-        # if dead_snake:
-        #     print(dead_snake)
-
         # Draw snake
         for pos in snake_body:
-            if framerate == 12:
-                pygame.draw.rect(screen, red, pygame.Rect(pos[0], pos[1], 10, 10))
+            if epilepsy and framerate == 12:
+                if pos in dead_snake:
+                    pygame.draw.rect(screen, darkred, pygame.Rect(pos[0], pos[1], 10, 10))
+                else:
+                    pygame.draw.rect(screen, red, pygame.Rect(pos[0], pos[1], 10, 10))
             else:
                 if pos in dead_snake:
                     pygame.draw.rect(screen, darkgreen, pygame.Rect(pos[0], pos[1], 10, 10))
@@ -346,9 +352,6 @@ def main():
             snake_pos[1] = height - 10
         elif snake_pos[1] >= height:
             snake_pos[1] = 0
-
-        # if random.random() < 0.01:
-        #     game_over()
 
         # Game Over conditions
         for block in snake_body[1:]:
