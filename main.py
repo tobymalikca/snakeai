@@ -35,6 +35,7 @@ change_to = direction
 score = 0
 framerate = 25
 deaths = 0
+enable_AI = True
 epilepsy = False # Epilepsy mode was only really used to debug the AI
 
 # This function is called when the snake is about to move into itself
@@ -187,7 +188,7 @@ def game_over():
 
 # Starting menu function
 def main_menu():
-    global epilepsy
+    global epilepsy, enable_AI
     menu = True
     while menu:
         for event in pygame.event.get():
@@ -197,8 +198,10 @@ def main_menu():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:  # Press Enter to start the game
                     menu = False
-                if event.key == pygame.K_1:  # Toggle epilepsy mode
+                elif event.key == pygame.K_1:  # Toggle epilepsy mode
                     epilepsy = not epilepsy
+                elif event.key == pygame.K_2: # Toggle player mode or AI mode
+                    enable_AI = not enable_AI
 
         screen.fill(black)
         font = pygame.font.SysFont('arial', 50)
@@ -221,6 +224,11 @@ def main_menu():
         small_text_rect = small_text_surface.get_rect(center=(width // 2, height // 1.3))
         screen.blit(small_text_surface, small_text_rect)
 
+        font = pygame.font.SysFont('arial', 20)
+        enable_AI_surface = font.render('Press 2 to toggle AI playing: ' + str(enable_AI), True, white)
+        enable_AI_rect = enable_AI_surface.get_rect(center=(width // 2, height // 1.15))
+        screen.blit(enable_AI_surface, enable_AI_rect)
+
         pygame.display.update()
         fps_controller.tick(15)
 
@@ -236,22 +244,23 @@ def main():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if not epilepsy and event.key == pygame.K_SPACE:
                     if framerate == 25:
                         framerate = 250
                     else:
                         framerate = 25
-            # elif event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_UP:
-            #         change_to = 'UP'
-            #     elif event.key == pygame.K_DOWN:
-            #         change_to = 'DOWN'
-            #     elif event.key == pygame.K_LEFT:
-            #         change_to = 'LEFT'
-            #     elif event.key == pygame.K_RIGHT:
-            #         change_to = 'RIGHT'
+                if not enable_AI:
+                    if event.key == pygame.K_UP:
+                        change_to = 'UP'
+                    elif event.key == pygame.K_DOWN:
+                        change_to = 'DOWN'
+                    elif event.key == pygame.K_LEFT:
+                        change_to = 'LEFT'
+                    elif event.key == pygame.K_RIGHT:
+                        change_to = 'RIGHT'
 
-        AI()
+        if enable_AI:
+            AI()
 
         # Validate direction
         if change_to == 'UP' and direction != 'DOWN':
