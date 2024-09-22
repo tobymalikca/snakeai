@@ -16,6 +16,9 @@ black = pygame.Color(0, 0, 0)
 white = pygame.Color(255, 255, 255)
 red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)
+darkgreen = pygame.Color(0, 150, 0)
+blue = pygame.Color(0, 0, 255)
+orange = pygame.Color(255, 165 , 0)
 
 # FPS (frames per second) controller
 fps_controller = pygame.time.Clock()
@@ -23,6 +26,7 @@ fps_controller = pygame.time.Clock()
 # Snake and food settings
 snake_pos = [100, 50]
 snake_body = [[100, 50], [90, 50], [80, 50]]
+dead_snake = []
 food_pos = [random.randrange(1, (width//10)) * 10, random.randrange(1, (height//10)) * 10]
 food_spawn = True
 direction = 'RIGHT'
@@ -57,7 +61,7 @@ def resolve(direction):
         if [snake_pos[0], (snake_pos[1] + 10*i) % height] in snake_body:
             if [snake_pos[0], (snake_pos[1] + 10) % height] in snake_body:
                 if [(snake_pos[0] - 10)  % width, snake_pos[1]] in snake_body and [(snake_pos[0] + 10) % width, snake_pos[1]] in snake_body:
-                    print("Trapped - up")
+                    # print("Trapped - up")
                     return 'UP'
                 else:
                     return resolve('up')
@@ -66,7 +70,7 @@ def resolve(direction):
         elif [snake_pos[0], (snake_pos[1] - 10*i) % height] in snake_body:
             if [snake_pos[0], (snake_pos[1] - 10) % height] in snake_body:
                 if [(snake_pos[0] - 10) % width, snake_pos[1]] in snake_body and [(snake_pos[0] + 10) % width, snake_pos[1]] in snake_body:
-                    print("Trapped - down")
+                    # print("Trapped - down")
                     return 'DOWN'
                 else:
                     return resolve('down')
@@ -157,10 +161,13 @@ def AI():
 
 # Game Over function
 def game_over():
-    global deaths, snake_pos
+    global deaths, snake_pos, dead_snake, snake_body
     # time.sleep(0.2)
     deaths += 1
     i = 1
+
+    dead_snake = snake_body.copy()
+
     # Respawn the snake somewhere randomly
     # the previous snake body still persists and fades out instead of vanishing instantly
     while True:
@@ -213,7 +220,7 @@ def main_menu():
 
 # Main function
 def main():
-    global change_to, direction, snake_pos, snake_body, food_pos, food_spawn, score, framerate
+    global change_to, direction, snake_pos, snake_body, food_pos, food_spawn, score, framerate, dead_snake
 
     main_menu()
 
@@ -222,11 +229,11 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if event.type == pygame.KEYDOWN:
+                    if framerate == 25:
                         framerate = 250
-                    elif event.type == pygame.KEYUP:
+                    else:
                         framerate = 25
             # elif event.type == pygame.KEYDOWN:
             #     if event.key == pygame.K_UP:
@@ -267,12 +274,14 @@ def main():
             food_spawn = False
         else:
             snake_body.pop()
+            if dead_snake:
+                dead_snake.pop()
 
         # Spawn in the food
         if not food_spawn:
             i = 1
             # Jumpstart the snake if you want to skip the early game
-            if False and len(snake_body) < 100:
+            if True and len(snake_body) < 100:
                 match direction:
                     case 'UP':
                         food_pos = [snake_pos[0], snake_pos[1] - 10]
@@ -302,24 +311,31 @@ def main():
         # Background
         screen.fill(black)
 
-        font = pygame.font.SysFont('courier new', 20)
-        if deaths < 1:
-            text_surface = font.render(f'Score: {score}', True, white)
-        else:
-            text_surface = font.render(f'Deaths: {deaths}', False, white)
-        text_rect = text_surface.get_rect()
-        text_rect.topleft = (10, 10)
-        screen.blit(text_surface, text_rect)
+        # if dead_snake:
+        #     print(dead_snake)
 
         # Draw snake
         for pos in snake_body:
             if framerate == 12:
                 pygame.draw.rect(screen, red, pygame.Rect(pos[0], pos[1], 10, 10))
             else:
-                pygame.draw.rect(screen, green, pygame.Rect(pos[0], pos[1], 10, 10))
+                if pos in dead_snake:
+                    pygame.draw.rect(screen, darkgreen, pygame.Rect(pos[0], pos[1], 10, 10))
+                else:
+                    pygame.draw.rect(screen, green, pygame.Rect(pos[0], pos[1], 10, 10))
 
         # Draw food
         pygame.draw.rect(screen, white, pygame.Rect(food_pos[0], food_pos[1], 10, 10))
+
+        # Draw score/deaths
+        font = pygame.font.SysFont('arial', 20)
+        if deaths < 1:
+            text_surface = font.render(f'Score: {score}', True, blue)
+        else:
+            text_surface = font.render(f'Score: {score} Deaths: {deaths}', True, blue)
+        text_rect = text_surface.get_rect()
+        text_rect.topleft = (10, 10)
+        screen.blit(text_surface, text_rect)
 
         # Wrap around screen
         if snake_pos[0] < 0:
